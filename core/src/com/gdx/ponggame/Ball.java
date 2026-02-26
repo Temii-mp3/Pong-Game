@@ -30,7 +30,7 @@ public class Ball {
         ballCircle = new Circle(ball_pos.x, ball_pos.y, BALL_RADIUS);
     }
 
-    public void DrawBall(){
+    public void DrawBall(){ 
         ballCircle.setPosition(ball_pos);
         ballShape.begin(ShapeRenderer.ShapeType.Filled);
         ballShape.setColor(color);
