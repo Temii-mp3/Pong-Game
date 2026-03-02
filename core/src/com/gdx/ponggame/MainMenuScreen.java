@@ -81,12 +81,14 @@ public class MainMenuScreen implements Screen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 dispose();
-                game.setScreen(new MultiplayerScreen(game));
+                game.setScreen(new MultiplayerScreen(game, Option.DIFFCOMPUTER));
             }
         });
 
 
     }
+
+
 
     @Override
     public void show() {

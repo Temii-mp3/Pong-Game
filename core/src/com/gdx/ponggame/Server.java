@@ -2,57 +2,65 @@ package com.gdx.ponggame;
 
 import com.badlogic.gdx.Gdx;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.function.Consumer;
 
 public class Server {
     private ServerSocket server;
     private Socket socket;
-    private DataInputStream inputStream;
-
+    private BufferedReader reader;
+    private PrintWriter writer;
     private Runnable onClientConnected;
 
-    public Server(int port){
+    public Server(int port, Runnable listener){
         try{
+            this.onClientConnected = listener;
             server = new ServerSocket(port);
-            while(!server.isClosed()) {
-                System.out.println("Server Listening on port: " + port);
-            socket = server.accept();
-            if(onClientConnected != null){
-                Gdx.app.postRunnable(() -> onClientConnected.run());
-
-            }
-            }
-
-            System.out.println("Server Connected ");
-            inputStream = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
-            String line ="";
-
-            while (!line.equals("ESC")){
-                line = inputStream.readUTF();
-                System.out.print("Received from client: " + line);
-            }
-
-            System.out.print("Closing Connection");
-            socket.close();
-            inputStream.close();
-
         }catch (Exception e){
             e.printStackTrace();
         }
     }
 
-    public boolean isConnected(){
-        if(socket.isConnected()){
-            return true;
+    public void sendInfo(String string){
+        if(writer != null){
+            writer.println(string);
         }
-        return false;
     }
 
-    public void setOnClientConnected(Runnable listener){
-        this.onClientConnected = listener;
+    public void start(){
+        Thread serverThread = new Thread(() ->{
+            try{
+                socket = server.accept();
+                reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+                if(onClientConnected != null){
+                    Gdx.app.postRunnable(() -> onClientConnected.run());
+                }
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+        });
+        serverThread.setDaemon(true);
+        serverThread.start();
     }
 
+    public void listen(Consumer<String> message){
+        Thread listenerThread = new Thread(() ->{
+            while(reader == null) {
+                try { Thread.sleep(100); } catch (InterruptedException e) { e.printStackTrace(); }
+            }
+            try{
+                String line;
+                while((line = reader.readLine()) != null){
+                    message.accept(line);
+                }
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+        });
+        listenerThread.setDaemon(true);
+        listenerThread.start();
+    }
 }

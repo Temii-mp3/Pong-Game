@@ -1,10 +1,13 @@
 package com.gdx.ponggame;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 public class HostScreen implements Screen {
@@ -16,7 +19,7 @@ public class HostScreen implements Screen {
     private TextButton button;
     Stage hostScreenStage;
     Table root;
-
+    volatile Server server;
     HostScreen(final Pong game){
         hostScreenStage = new Stage();
         root = new Table();
@@ -27,20 +30,10 @@ public class HostScreen implements Screen {
         infoScreen = new Label("Waiting for Client......", game.skin);
         System.out.print("We are here ");
         button = new TextButton("Play", game.skin);
-        Thread serverCreation = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Server server = new Server(8080);
-                server.setOnClientConnected(() ->{
-                    root.add(button).center();
-                });
-
-            }
-        });
-        serverCreation.start();
-
         root.add(infoScreen).center();
         root.row();
+
+
     }
 
 
@@ -48,7 +41,26 @@ public class HostScreen implements Screen {
 
     @Override
     public void show() {
+        Gdx.input.setInputProcessor(hostScreenStage);
+        Thread serverCreation = new Thread(() -> {
+             server = new Server(8080, () -> {
+                root.clear();
+                root.add(button).center();
+            });
+            server.start();
+        });
+        serverCreation.start();
 
+        button.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                System.out.println(server);
+                server.sendInfo("PLAY");
+                dispose();
+                game.setScreen(new GameScreen(game, Option.DIFFCOMPUTER, Type.IS_HOST, null, server));
+
+            }
+        });
     }
 
     @Override

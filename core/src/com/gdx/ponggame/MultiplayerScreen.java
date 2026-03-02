@@ -25,7 +25,10 @@ public class MultiplayerScreen implements Screen {
     private Stage multiplayerScreenStage;
     private Table root;
 
-    MultiplayerScreen(final Pong game){
+    Option option;
+
+    MultiplayerScreen(final Pong game, Option option){
+        option = this.option;
         multiplayerScreenStage = new Stage();
         root = new Table();
         root.setFillParent(true);
